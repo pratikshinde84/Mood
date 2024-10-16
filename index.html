@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Digital Mood Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .mood-options {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+
+        .mood {
+            font-size: 30px;
+            cursor: pointer;
+        }
+
+        .mood:hover {
+            transform: scale(1.2);
+        }
+
+        .mood-history {
+            margin-top: 30px;
+        }
+
+        .mood-history ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .mood-history li {
+            margin: 5px 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-left: 5px solid;
+        }
+
+        /* Mood colors */
+        .happy { border-color: #ffeb3b; }
+        .sad { border-color: #2196f3; }
+        .neutral { border-color: #9e9e9e; }
+        .angry { border-color: #f44336; }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Digital Mood Tracker</h1>
+
+        <!-- Mood Chart (now placed above mood history) -->
+        <canvas id="moodChart"></canvas>
+
+        <!-- Mood Options -->
+        <div class="mood-options">
+            <div class="mood happy" data-mood="Happy">😊</div>
+            <div class="mood sad" data-mood="Sad">😔</div>
+            <div class="mood neutral" data-mood="Neutral">😐</div>
+            <div class="mood angry" data-mood="Angry">😡</div>
+        </div>
+
+        <!-- Mood History -->
+        <div class="mood-history">
+            <h3>Mood History</h3>
+            <ul id="mood-history-list"></ul>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Handle Mood Logging
+        const moodElements = document.querySelectorAll('.mood');
+        const moodHistoryList = document.getElementById('mood-history-list');
+        const moodData = JSON.parse(localStorage.getItem('moodData')) || [];
+
+        moodElements.forEach(moodEl => {
+            moodEl.addEventListener('click', () => {
+                const mood = moodEl.getAttribute('data-mood');
+                logMood(mood);
+            });
+        });
+
+        function logMood(mood) {
+            const date = new Date().toLocaleDateString();
+            moodData.push({ mood, date });
+            localStorage.setItem('moodData', JSON.stringify(moodData));
+            updateMoodHistory();
+            updateMoodChart();
+        }
+
+        // Update Mood History
+        function updateMoodHistory() {
+            moodHistoryList.innerHTML = '';
+            moodData.forEach(entry => {
+                const listItem = document.createElement('li');
+                listItem.textContent = `${entry.date}: ${entry.mood}`;
+                listItem.classList.add(entry.mood.toLowerCase());
+                moodHistoryList.appendChild(listItem);
+            });
+        }
+
+        // Initialize Chart
+        const ctx = document.getElementById('moodChart').getContext('2d');
+        let moodChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Happy', 'Sad', 'Neutral', 'Angry'],
+                datasets: [{
+                    label: 'Mood Distribution',
+                    data: getMoodCounts(),
+                    backgroundColor: ['#ffeb3b', '#2196f3', '#9e9e9e', '#f44336'],
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+
+        // Get Mood Counts for Chart
+        function getMoodCounts() {
+            const counts = { Happy: 0, Sad: 0, Neutral: 0, Angry: 0 };
+            moodData.forEach(entry => {
+                counts[entry.mood]++;
+            });
+            return Object.values(counts);
+        }
+
+        // Update Chart
+        function updateMoodChart() {
+            moodChart.data.datasets[0].data = getMoodCounts();
+            moodChart.update();
+        }
+
+        // Initial Render
+        updateMoodHistory();
+        updateMoodChart();
+    </script>
+</body>
+</html>
